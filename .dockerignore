@@ -1,0 +1,9 @@
+.git
+node_modules
+dist
+uploads
+private_uploads
+.env
+.env.*
+!.env.example
+npm-debug.log*

@@ -1,0 +1,37 @@
+{
+  "name": "palia-property-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "whatsapp:worker": "tsx src/whatsapp/worker.ts",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "admin:bootstrap": "tsx src/scripts/bootstrap-admin.ts"
+  },
+  "dependencies": {
+    "@fastify/compress": "^9.2.0",
+    "@fastify/cors": "^11.0.0",
+    "@fastify/helmet": "^13.1.1",
+    "@fastify/jwt": "^10.2.2",
+    "@fastify/multipart": "^9.2.1",
+    "@fastify/rate-limit": "^11.2.0",
+    "@fastify/static": "^10.1.5",
+    "@prisma/client": "^6.19.0",
+    "bullmq": "^6.3.11",
+    "dotenv": "^17.2.2",
+    "fastify": "^5.4.0",
+    "ioredis": "^6.0.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "prisma": "^6.12.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.8.0"
+  }
+}

@@ -1,0 +1,18 @@
+ALTER TABLE "User"
+ADD COLUMN "email" VARCHAR(254),
+ADD COLUMN "whatsappNumber" VARCHAR(15),
+ADD COLUMN "avatarUrl" VARCHAR(500),
+ADD COLUMN "brokerageName" VARCHAR(160),
+ADD COLUMN "brokerRegistrationNumber" VARCHAR(80),
+ADD COLUMN "yearsExperience" INTEGER,
+ADD COLUMN "addressLine1" VARCHAR(200),
+ADD COLUMN "addressLine2" VARCHAR(200),
+ADD COLUMN "city" VARCHAR(100),
+ADD COLUMN "district" VARCHAR(100),
+ADD COLUMN "state" VARCHAR(100),
+ADD COLUMN "postalCode" VARCHAR(10),
+ADD COLUMN "identityDocumentPath" VARCHAR(500),
+ADD COLUMN "identityDocumentFilename" VARCHAR(180),
+ADD COLUMN "identityVerificationStatus" VARCHAR(20) NOT NULL DEFAULT 'NOT_SUBMITTED',
+ADD COLUMN "identityVerificationNote" VARCHAR(500),
+ADD COLUMN "kycConsentAt" TIMESTAMP(3);

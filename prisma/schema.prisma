@@ -1,0 +1,377 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  BUYER
+  SELLER
+  BROKER
+  AGENT
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum PropertyStatus {
+  DRAFT
+  PENDING
+  ACTIVE
+  REJECTED
+  SOLD
+  ARCHIVED
+}
+
+enum PropertyCategory {
+  AGRICULTURAL_LAND
+  PADDY_WHEAT
+  SUGARCANE_FARM
+  MANGO_ORCHARD
+  POPLAR_PLANTATION
+  FARMHOUSE
+  DAIRY_POULTRY
+  RESIDENTIAL_PLOT
+  HOUSE
+  COMMERCIAL_PROPERTY
+  HIGHWAY_INVESTMENT
+  INDUSTRIAL_LAND
+  WAREHOUSE
+  RESORT_HOTEL_LAND
+}
+
+enum LandUnit {
+  BIGHA
+  ACRE
+  HECTARE
+  SQFT
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  SITE_VISIT
+  OFFER_MADE
+  CLOSED
+}
+
+enum VerificationStatus {
+  PENDING
+  IN_REVIEW
+  VERIFIED
+  REJECTED
+}
+
+enum DocumentType {
+  KHATAUNI
+  KHASRA
+  IDENTITY
+  REGISTRY
+  OTHER
+}
+
+enum SiteVisitStatus {
+  REQUESTED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id String @id @default(uuid()) @db.Uuid
+  phone String @unique @db.VarChar(15)
+  name String? @db.VarChar(120)
+  email String? @db.VarChar(254)
+  whatsappNumber String? @db.VarChar(15)
+  avatarUrl String? @db.VarChar(500)
+  brokerageName String? @db.VarChar(160)
+  brokerRegistrationNumber String? @db.VarChar(80)
+  yearsExperience Int?
+  addressLine1 String? @db.VarChar(200)
+  addressLine2 String? @db.VarChar(200)
+  city String? @db.VarChar(100)
+  district String? @db.VarChar(100)
+  state String? @db.VarChar(100)
+  postalCode String? @db.VarChar(10)
+  identityDocumentPath String? @db.VarChar(500)
+  identityDocumentFilename String? @db.VarChar(180)
+  identityVerificationStatus String @default("NOT_SUBMITTED") @db.VarChar(20)
+  identityVerificationNote String? @db.VarChar(500)
+  kycConsentAt DateTime?
+  role UserRole @default(BUYER)
+  isVerified Boolean @default(false)
+  isBlocked Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  properties Property[]
+  leads Lead[]
+  savedProperties SavedProperty[]
+  alerts PropertyAlert[]
+  siteVisits SiteVisit[]
+}
+
+model Location {
+  id String @id @default(uuid()) @db.Uuid
+  name String @db.VarChar(120)
+  slug String @unique @db.VarChar(140)
+  type String @db.VarChar(30)
+  district String @default("Lakhimpur Kheri") @db.VarChar(120)
+  state String @default("Uttar Pradesh") @db.VarChar(120)
+  isActive Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([name, type])
+  @@index([type, isActive])
+}
+
+model Property {
+  id String @id @default(uuid()) @db.Uuid
+  ownerId String @db.Uuid
+  owner User @relation(fields: [ownerId], references: [id])
+  title String @db.VarChar(255)
+  slug String @unique @db.VarChar(300)
+  category PropertyCategory
+  status PropertyStatus @default(PENDING)
+  description String?
+  village String @db.VarChar(100)
+  tehsil String @default("Palia")
+  district String @default("Lakhimpur Kheri")
+  latitude Float?
+  longitude Float?
+  price BigInt
+  pricePerBigha BigInt?
+  pricePerAcre BigInt?
+  area Float
+  areaUnit LandUnit @default(BIGHA)
+  irrigation String[]
+  roadFrontage Int?
+  electricity Boolean @default(false)
+  highwayTouch Boolean @default(false)
+  canalTouch Boolean @default(false)
+  distanceFromPalia Float?
+  khasraNumber String?
+  khatauniVerified Boolean @default(false)
+  registryReady Boolean @default(false)
+  images String[]
+  viewCount Int @default(0)
+  featured Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  leads Lead[]
+  documents PropertyDocument[]
+  verifications PropertyVerification[]
+  savedBy SavedProperty[]
+  siteVisits SiteVisit[]
+  @@index([status, village, category])
+  @@index([status, price])
+}
+
+model PropertyDocument {
+  id String @id @default(uuid()) @db.Uuid
+  propertyId String @db.Uuid
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  type DocumentType
+  url String
+  filename String
+  mimeType String
+  status VerificationStatus @default(PENDING)
+  reviewNote String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([propertyId, type])
+}
+
+model PropertyVerification {
+  id String @id @default(uuid()) @db.Uuid
+  propertyId String @db.Uuid
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  level Int
+  name String
+  status VerificationStatus @default(PENDING)
+  note String?
+  reviewedById String? @db.Uuid
+  reviewedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([propertyId, level])
+  @@index([status])
+}
+
+model SavedProperty {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyId String @db.Uuid
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@unique([userId, propertyId])
+}
+
+model PropertyAlert {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  village String?
+  category PropertyCategory?
+  minPrice BigInt?
+  maxPrice BigInt?
+  minArea Float?
+  maxArea Float?
+  isActive Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SiteVisit {
+  id String @id @default(uuid()) @db.Uuid
+  propertyId String @db.Uuid
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  buyerId String @db.Uuid
+  buyer User @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  scheduledFor DateTime
+  note String?
+  status SiteVisitStatus @default(REQUESTED)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([propertyId, status])
+  @@index([buyerId, status])
+}
+
+model PropertyType {
+  id          String   @id @default(uuid()) @db.Uuid
+  key         String   @unique @db.VarChar(80)
+  label       String   @db.VarChar(120)
+  description String?  @db.VarChar(300)
+  icon        String?  @db.VarChar(80)
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+model Lead {
+  id String @id @default(uuid()) @db.Uuid
+  propertyId String @db.Uuid
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  buyerId String? @db.Uuid
+  buyer User? @relation(fields: [buyerId], references: [id])
+  buyerName String @db.VarChar(120)
+  buyerPhone String @db.VarChar(15)
+  buyerWhatsapp String? @db.VarChar(15)
+  message String? @db.VarChar(500)
+  status LeadStatus @default(NEW)
+  source String @default("website")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([propertyId, status])
+  @@index([buyerPhone, propertyId, createdAt])
+}
+
+model BuyerInquiry {
+  id String @id @default(uuid()) @db.Uuid
+  buyerName String @db.VarChar(120)
+  buyerPhone String @db.VarChar(15)
+  purpose String @db.VarChar(40)
+  preferredVillages String[]
+  minArea Float?
+  maxArea Float?
+  areaUnit String?
+  minBudget BigInt?
+  maxBudget BigInt?
+  waterSourceRequired String?
+  highwayTouchRequired Boolean @default(false)
+  immediateRegistryRequired Boolean @default(false)
+  notes String? @db.VarChar(300)
+  status String @default("NEW") @db.VarChar(20)
+  createdAt DateTime @default(now())
+  @@index([buyerPhone, createdAt])
+}
+
+enum WhatsAppDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum WhatsAppMessageStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  READ
+  FAILED
+  REJECTED
+  OPTED_OUT
+}
+
+model WhatsAppContact {
+  id String @id @default(uuid()) @db.Uuid
+  phone String @unique @db.VarChar(20)
+  firstName String? @db.VarChar(80)
+  lastName String? @db.VarChar(80)
+  source String? @db.VarChar(60)
+  isOptedOut Boolean @default(false)
+  optOutReason String? @db.VarChar(200)
+  consentedAt DateTime?
+  optOutAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  messages WhatsAppMessage[]
+  optIns WhatsAppOptIn[]
+  conversationStates ConversationState[]
+
+  @@index([isOptedOut, updatedAt])
+}
+
+model WhatsAppOptIn {
+  id String @id @default(uuid()) @db.Uuid
+  phone String @db.VarChar(20)
+  source String @db.VarChar(60)
+  consentText String? @db.VarChar(500)
+  isActive Boolean @default(true)
+  consentedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  contactId String? @db.Uuid
+  contact WhatsAppContact? @relation(fields: [contactId], references: [id])
+
+  @@index([phone, isActive])
+}
+
+model WhatsAppMessage {
+  id String @id @default(uuid()) @db.Uuid
+  contactId String? @db.Uuid
+  contact WhatsAppContact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  phone String @db.VarChar(20)
+  direction WhatsAppDirection
+  status WhatsAppMessageStatus @default(QUEUED)
+  template String? @db.VarChar(120)
+  eventName String? @db.VarChar(120)
+  providerMessageId String? @db.VarChar(120)
+  content String? @db.VarChar(5000)
+  error String? @db.VarChar(1000)
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phone, createdAt])
+  @@index([status, createdAt])
+}
+
+model ConversationState {
+  id String @id @default(uuid()) @db.Uuid
+  contactId String @db.Uuid
+  contact WhatsAppContact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  phone String @db.VarChar(20)
+  stateKey String @db.VarChar(80)
+  currentStep String? @db.VarChar(80)
+  state Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([contactId, stateKey])
+  @@index([phone, stateKey])
+}
