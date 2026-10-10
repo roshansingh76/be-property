@@ -1,7 +1,8 @@
 import type { FastifyInstance } from "fastify";
-import { PropertyStatus } from "@prisma/client";
+import { PropertyStatus, UserRole } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../db.js";
+import { enqueueWhatsApp } from "../whatsapp/service.js";
 
 const leadInput = z.object({ propertyId: z.string().uuid(), buyerName: z.string().min(2).max(120), buyerPhone: z.string().regex(/^[6-9]\d{9}$/), buyerWhatsapp: z.string().regex(/^[6-9]\d{9}$/).optional(), message: z.string().max(500).optional(), source: z.string().max(40).default("website") });
 
@@ -29,7 +30,34 @@ export async function leadRoutes(app: FastifyInstance) {
       });
     }
 
-    return reply.code(201).send(await prisma.lead.create({ data: parsed.data }));
+    const lead = await prisma.lead.create({ data: parsed.data });
+
+    // Step 7: Notify broker/agent owner when a new lead comes in for their property
+    prisma.property.findUnique({
+      where: { id: parsed.data.propertyId },
+      include: { owner: { select: { role: true, phone: true, whatsappNumber: true, name: true } } },
+    }).then(propWithOwner => {
+      const owner = propWithOwner?.owner;
+      if (owner && (owner.role === UserRole.BROKER || owner.role === UserRole.AGENT)) {
+        const ownerPhone = owner.whatsappNumber ?? owner.phone;
+        if (ownerPhone) {
+          enqueueWhatsApp({
+            phone: ownerPhone,
+            eventName: "new_lead_broker_notice",
+            variables: {
+              broker_name: owner.name ?? "Broker",
+              buyer_name: parsed.data.buyerName,
+              property_title: property.title,
+              village: property.village,
+              buyer_phone: parsed.data.buyerPhone,
+            },
+            dedupeKey: `lead-broker:${lead.id}`,
+          }).catch(() => undefined);
+        }
+      }
+    }).catch(() => undefined);
+
+    return reply.code(201).send(lead);
   });
 
   app.patch<{ Params: { id: string } }>("/leads/:id/status", { preHandler: app.authenticate }, async (request, reply) => {

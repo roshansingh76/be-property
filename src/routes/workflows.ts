@@ -6,6 +6,7 @@ import { pipeline } from "node:stream/promises";
 import { DocumentType, PropertyCategory, PropertyStatus, UserRole } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../db.js";
+import { enqueueWhatsApp } from "../whatsapp/service.js";
 
 const adminRoles: string[] = [UserRole.ADMIN, UserRole.SUPER_ADMIN];
 const ownerRoles: string[] = [UserRole.SELLER, UserRole.BROKER, UserRole.AGENT, UserRole.ADMIN, UserRole.SUPER_ADMIN];
@@ -49,13 +50,18 @@ export async function workflowRoutes(app: FastifyInstance) {
   app.post<{ Params: { id: string } }>("/properties/:id/documents", { preHandler: app.authenticate }, async (request, reply) => {
     const property = await prisma.property.findUnique({ where: { id: request.params.id } });
     if (!property) return reply.code(404).send({ error: "Property not found" });
-    if (!ownerRoles.includes(request.authUser.role) || property.ownerId !== request.authUser.userId) return reply.code(403).send({ error: "Property owner access required" });
+    // Fixed: was `||` (blocked everyone); now `&&` so admins bypass ownership check
+    if (!ownerRoles.includes(request.authUser.role) && property.ownerId !== request.authUser.userId) return reply.code(403).send({ error: "Property owner access required" });
     const uploadDir = path.join(process.cwd(), "uploads", "properties", property.id, "documents");
     await mkdir(uploadDir, { recursive: true });
     const created: { id: string; url: string; type: string }[] = [];
+    const allowedMimes = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
     let documentTypeValue = "OTHER";
     for await (const part of request.parts()) {
       if (part.type === "field") { if (part.fieldname === "documentType") documentTypeValue = String(part.value); continue; }
+      if (!allowedMimes.has(part.mimetype)) {
+        return reply.code(400).send({ error: "Only PDF, JPEG, PNG, or WebP files are supported", code: "INVALID_FILE_TYPE" });
+      }
       const typeValue = documentTypeValue;
       const type = Object.values(DocumentType).includes(typeValue as DocumentType) ? typeValue as DocumentType : DocumentType.OTHER;
       const filename = `${Date.now()}-${part.filename.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
@@ -63,7 +69,67 @@ export async function workflowRoutes(app: FastifyInstance) {
       const document = await prisma.propertyDocument.create({ data: { propertyId: property.id, type, url: `/uploads/properties/${property.id}/documents/${filename}`, filename, mimeType: part.mimetype } });
       created.push({ id: document.id, url: document.url, type: document.type });
     }
+
+    // Step 6: WhatsApp notification to property owner when broker/agent uploads a document
+    if (created.length > 0) {
+      const propWithOwner = await prisma.property.findUnique({
+        where: { id: property.id },
+        include: { owner: { select: { id: true, name: true, phone: true, whatsappNumber: true } } },
+      });
+      const owner = propWithOwner?.owner;
+      if (owner && request.authUser.userId !== owner.id) {
+        const uploaderUser = await prisma.user.findUnique({ where: { id: request.authUser.userId }, select: { name: true } });
+        const brokerName = uploaderUser?.name ?? "Broker";
+        const ownerPhone = owner.whatsappNumber ?? owner.phone;
+        if (ownerPhone) {
+          for (const doc of created) {
+            enqueueWhatsApp({
+              phone: ownerPhone,
+              eventName: "broker_document_uploaded",
+              variables: {
+                document_type: doc.type,
+                property_title: property.title,
+                village: property.village,
+                broker_name: brokerName,
+              },
+              dedupeKey: `broker-doc:${doc.id}`,
+            }).catch(() => undefined);
+          }
+        }
+        // Also notify admin if ADMIN_PHONE is set
+        const adminPhone = process.env["ADMIN_PHONE"];
+        if (adminPhone) {
+          for (const doc of created) {
+            enqueueWhatsApp({
+              phone: adminPhone,
+              eventName: "broker_document_uploaded",
+              variables: {
+                document_type: doc.type,
+                property_title: property.title,
+                village: property.village,
+                broker_name: brokerName,
+              },
+              dedupeKey: `broker-doc-admin:${doc.id}`,
+            }).catch(() => undefined);
+          }
+        }
+      }
+    }
+
     return { documents: created };
+  });
+
+  // Step 2: GET /properties/:id/documents
+  app.get<{ Params: { id: string } }>("/properties/:id/documents", { preHandler: app.authenticate }, async (request, reply) => {
+    const property = await prisma.property.findUnique({ where: { id: request.params.id } });
+    if (!property) return reply.code(404).send({ error: "Property not found" });
+    if (!ownerRoles.includes(request.authUser.role) && property.ownerId !== request.authUser.userId) return reply.code(403).send({ error: "Property owner access required" });
+    const documents = await prisma.propertyDocument.findMany({
+      where: { propertyId: property.id },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, type: true, url: true, filename: true, mimeType: true, status: true, createdAt: true },
+    });
+    return { documents };
   });
 
   app.get<{ Params: { id: string } }>("/properties/:id/verification", async (request, reply) => {

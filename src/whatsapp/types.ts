@@ -9,7 +9,11 @@ export type WhatsAppEventName =
   | "saved_search_alert"
   | "site_visit_reminder"
   | "lead_follow_up"
-  | "chatbot_menu";
+  | "chatbot_menu"
+  | "broker_images_uploaded"
+  | "broker_document_uploaded"
+  | "new_property_inquiry_broker"
+  | "new_lead_broker_notice";
 
 export interface WhatsAppJobPayload {
   phone: string;

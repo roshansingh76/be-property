@@ -7,6 +7,7 @@ import { PropertyCategory, PropertyStatus, UserRole } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../db.js";
 import { serializeProperty, slugify } from "../lib/property.js";
+import { enqueueWhatsApp } from "../whatsapp/service.js";
 
 const input = z.object({
   title: z.string().min(5).max(255),
@@ -202,6 +203,32 @@ export async function propertyRoutes(app: FastifyInstance) {
       where: { id: property.id },
       data: { images: { push: urls } },
     });
+
+    // Step 5: Notify property owner when a broker/agent uploads images on their behalf
+    const propWithOwner = await prisma.property.findUnique({
+      where: { id: property.id },
+      include: { owner: { select: { id: true, name: true, phone: true, whatsappNumber: true } } },
+    });
+    const owner = propWithOwner?.owner;
+    if (owner && request.authUser.userId !== owner.id) {
+      const uploaderUser = await prisma.user.findUnique({ where: { id: request.authUser.userId }, select: { name: true } });
+      const ownerPhone = owner.whatsappNumber ?? owner.phone;
+      if (ownerPhone) {
+        enqueueWhatsApp({
+          phone: ownerPhone,
+          eventName: "broker_images_uploaded",
+          variables: {
+            owner_name: owner.name ?? "Property Owner",
+            broker_name: uploaderUser?.name ?? "Broker",
+            photo_count: String(urls.length),
+            property_title: property.title,
+            village: property.village,
+          },
+          dedupeKey: `broker-images:${property.id}:${Date.now()}`,
+        }).catch(() => undefined);
+      }
+    }
+
     return { images: updated.images };
   });
 

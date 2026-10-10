@@ -65,6 +65,38 @@ export const WHATSAPP_TEMPLATES: Record<string, WhatsAppTemplateDefinition> = {
     hindiBody: "नमस्कार {{1}}, {{2}} के संबंध में अभी तक हमें कोई प्रतिक्रिया नहीं मिली है। क्या आप कॉलबैक या साइट विजिट चाहते हैं? 1 के लिए कॉलबैक, 2 के लिए साइट विजिट लिखें।",
     variables: ["buyer_name", "property_title"],
   },
+  broker_images_uploaded: {
+    name: "broker_images_uploaded",
+    category: "UTILITY",
+    language: "en",
+    englishBody: "Hi {{1}}, {{2}} has uploaded {{3}} new photos for your property \"{{4}}\" in {{5}}. Log in to review the images.",
+    hindiBody: "\u0928\u092e\u0938\u094d\u0915\u093e\u0930 {{1}}, {{2}} \u0928\u0947 \u0906\u092a\u0915\u0940 \u0938\u0902\u092a\u0924\u094d\u0924\u093f \"{{4}}\" ({{5}}) \u0915\u0947 \u0932\u093f\u090f {{3}} \u0928\u0908 \u092b\u093c\u094b\u091f\u094b \u0905\u092a\u0932\u094b\u0921 \u0915\u0940 \u0939\u0948\u0902\u0964 \u092b\u093c\u094b\u091f\u094b \u0926\u0947\u0916\u0928\u0947 \u0915\u0947 \u0932\u093f\u090f \u0932\u0949\u0917\u093f\u0928 \u0915\u0930\u0947\u0902\u0964",
+    variables: ["owner_name", "broker_name", "photo_count", "property_title", "village"],
+  },
+  broker_document_uploaded: {
+    name: "broker_document_uploaded",
+    category: "UTILITY",
+    language: "en",
+    englishBody: "A legal document ({{1}}) has been uploaded for \"{{2}}\" in {{3}} by {{4}}. Please log in to review and verify.",
+    hindiBody: "{{4}} \u0928\u0947 \"{{2}}\" ({{3}}) \u0915\u0947 \u0932\u093f\u090f \u090f\u0915 \u0915\u093e\u0928\u0942\u0928\u0940 \u0926\u0938\u094d\u0924\u093e\u0935\u0947\u091c\u093c ({{1}}) \u0905\u092a\u0932\u094b\u0921 \u0915\u093f\u092f\u093e \u0939\u0948\u0964 \u0915\u0943\u092a\u092f\u093e \u0932\u0949\u0917\u093f\u0928 \u0915\u0930\u0915\u0947 \u0938\u092e\u0940\u0915\u094d\u0937\u093e \u0915\u0930\u0947\u0902\u0964",
+    variables: ["document_type", "property_title", "village", "broker_name"],
+  },
+  new_property_inquiry_broker: {
+    name: "new_property_inquiry_broker",
+    category: "UTILITY",
+    language: "en",
+    englishBody: "Hi {{1}}, new buyer {{2}} is looking for {{3}} land in {{4}}. Check the admin panel for full details.",
+    hindiBody: "\u0928\u092e\u0938\u094d\u0915\u093e\u0930 {{1}}, \u0928\u092f\u093e \u0916\u0930\u0940\u0926\u0926\u093e\u0930 {{2}} {{4}} \u092e\u0947\u0902 {{3}} \u092d\u0942\u092e\u093f \u0916\u094b\u091c \u0930\u0939\u093e \u0939\u0948\u0964 \u092a\u0942\u0930\u0940 \u091c\u093e\u0928\u0915\u093e\u0930\u0940 \u0915\u0947 \u0932\u093f\u090f \u090f\u0921\u092e\u093f\u0928 \u092a\u0948\u0928\u0932 \u0926\u0947\u0916\u0947\u0902\u0964",
+    variables: ["broker_name", "buyer_name", "purpose", "preferred_area"],
+  },
+  new_lead_broker_notice: {
+    name: "new_lead_broker_notice",
+    category: "UTILITY",
+    language: "en",
+    englishBody: "Hi {{1}}, {{2}} is interested in \"{{3}}\" in {{4}}. Phone: {{5}}. Log in to follow up.",
+    hindiBody: "\u0928\u092e\u0938\u094d\u0915\u093e\u0930 {{1}}, {{2}} \u0915\u094b \"{{3}}\" ({{4}}) \u092e\u0947\u0902 \u0930\u0941\u091a\u093f \u0939\u0948\u0964 \u092b\u093c\u094b\u0928: {{5}}\u0964 \u092b\u093c\u0949\u0932\u094b-\u0905\u092a \u0915\u0947 \u0932\u093f\u090f \u0932\u0949\u0917\u093f\u0928 \u0915\u0930\u0947\u0902\u0964",
+    variables: ["broker_name", "buyer_name", "property_title", "village", "buyer_phone"],
+  },
 };
 
 export function resolveTemplateBody(templateName: string, locale: WhatsAppTemplateLanguage = "en", variables: Record<string, string> = {}): string {
