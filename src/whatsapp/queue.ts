@@ -1,10 +1,12 @@
 import { Redis } from "ioredis";
 import { Queue, Worker } from "bullmq";
 
-export const redisConnection = new Redis(process.env.REDIS_URL ?? "redis://localhost:6379");
+const redisUrl = process.env.REDIS_URL ?? "redis://localhost:6379";
+export const redisConnection = new Redis(redisUrl);
+const queueConnection = new Redis(redisUrl, { maxRetriesPerRequest: null });
 
 export const whatsappQueue = new Queue("whatsapp-events", {
-  connection: redisConnection.options,
+  connection: queueConnection,
   defaultJobOptions: {
     removeOnComplete: true,
     removeOnFail: false,
@@ -36,6 +38,6 @@ export function createWhatsAppWorker() {
       }
       return { ok: true, mode: templateName ? "template" : "text" };
     },
-    { connection: redisConnection.options },
+    { connection: queueConnection },
   );
 }
