@@ -58,5 +58,6 @@ export const config = schema.parse({
 
 export const allowedOrigins = [
   config.WEB_ORIGIN,
+  "https://veda-fe-property.onrender.com",
   ...(config.EXTRA_WEB_ORIGINS?.split(",").map(origin => origin.trim()).filter(Boolean) ?? []),
 ];
