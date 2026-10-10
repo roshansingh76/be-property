@@ -28,4 +28,4 @@ COPY --from=build --chown=node:node /app/dist ./dist
 
 USER node
 EXPOSE 4000
-CMD ["node", "dist/index.js"]
+CMD ["npm", "start"]
