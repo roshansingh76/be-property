@@ -7,3 +7,4 @@ private_uploads
 .env.*
 !.env.example
 npm-debug.log*
+.agents

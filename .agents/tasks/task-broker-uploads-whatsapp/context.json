@@ -1,0 +1,31 @@
+{
+  "project_type": "Monorepo: Node.js/Fastify + Prisma backend, Next.js 16 frontend, Flutter mobile app",
+  "language": "TypeScript (backend + frontend), Dart (mobile)",
+  "build_system": "Backend: npm + tsx (ESM, type:module). Frontend: Next.js 16 (next build). Mobile: Flutter SDK ^3.12.2",
+  "test_framework": "None configured — verification is TypeScript compile (npm run build) and flutter analyze",
+  "build_command": "Backend: npm run build (tsc) in /var/www/html/be-property. Frontend: npm run build in /var/www/html/fe-property. Mobile: flutter pub get && flutter analyze in /var/www/html/property-app",
+  "test_command": "Backend: npm run build. Frontend: npm run build. Mobile: flutter analyze",
+  "verification_instructions": "1. cd /var/www/html/be-property && npm run build — TypeScript must compile with zero errors. 2. cd /var/www/html/fe-property && npm run build — Next.js must build with no TypeScript errors. 3. cd /var/www/html/property-app && flutter pub get && flutter analyze — zero analysis errors.",
+  "snapshot_or_generated_files": "Backend: prisma generate produces @prisma/client (run `npx prisma generate` if schema changes). No schema changes needed for this task.",
+  "environment_constraints": "WhatsApp env vars (WHATSAPP_TOKEN, PHONE_NUMBER_ID, WABA_ID, VERIFY_TOKEN, APP_SECRET) are optional in development — enqueueWhatsApp short-circuits gracefully if queue is unavailable. ADMIN_PHONE is in .env.example already. Do NOT restart the dev server.",
+  "contribution_requirements": "AGENTS.md: This Next.js version may differ from training data — read node_modules/next/dist/docs/ for API patterns. No new libraries except image_picker and file_picker for Flutter (both standard packages).",
+  "key_patterns": "Backend routes: async Fastify handlers, app.authenticate preHandler, zod .safeParse for validation, prisma ORM, enqueueWhatsApp from src/whatsapp/service.ts for all WhatsApp sends. Frontend: 'use client' components, api helpers from lib/api/client.ts (api.get/post/patch), FormData for multipart, useAuth() hook. Flutter: ApiClient.get/post/patch/delete static methods, ApiClient.uploadImages for multipart, PropertyService/LeadService static classes, StatefulWidget + setState pattern.",
+  "relevant_files": [
+    "/var/www/html/be-property/src/routes/properties.ts",
+    "/var/www/html/be-property/src/routes/workflows.ts",
+    "/var/www/html/be-property/src/routes/leads.ts",
+    "/var/www/html/be-property/src/routes/inquiries.ts",
+    "/var/www/html/be-property/src/whatsapp/types.ts",
+    "/var/www/html/be-property/src/whatsapp/templates.ts",
+    "/var/www/html/be-property/src/whatsapp/service.ts",
+    "/var/www/html/be-property/.env.example",
+    "/var/www/html/fe-property/components/seller-dashboard.tsx",
+    "/var/www/html/fe-property/lib/api/client.ts",
+    "/var/www/html/property-app/lib/screens/seller/seller_dashboard.dart",
+    "/var/www/html/property-app/lib/services/api_client.dart",
+    "/var/www/html/property-app/lib/services/property_service.dart",
+    "/var/www/html/property-app/pubspec.yaml",
+    "/var/www/html/be-property/prisma/schema.prisma"
+  ],
+  "directory_structure": "be-property/src/routes/ — all Fastify route files; be-property/src/whatsapp/ — client, queue, service, templates, types, webhook, worker; fe-property/app/ — Next.js App Router pages; fe-property/components/ — shared UI components including seller-dashboard.tsx; fe-property/lib/api/client.ts — single typed API client; property-app/lib/screens/seller/ — Flutter seller screens; property-app/lib/services/ — ApiClient + service classes; property-app/lib/models/ — Dart model classes"
+}

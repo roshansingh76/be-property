@@ -1,0 +1,7 @@
+{
+  "task_id": "task-broker-uploads-whatsapp",
+  "task_description": "Enable brokers to upload/replace property images and legal documents from web and mobile; add WhatsApp automation for four events (image upload, document upload, new inquiry, new lead).",
+  "status": "pending",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}
