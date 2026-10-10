@@ -195,6 +195,11 @@ export async function authRoutes(app: FastifyInstance) {
       if (!isVerified) {
         return sendError(request, reply, 401, "Invalid or expired OTP", "OTP_INVALID");
       }
+    } else if (config.NODE_ENV === "development") {
+      if (parsed.data.code !== "123456") {
+        return sendError(request, reply, 401, "Invalid or expired OTP", "OTP_INVALID");
+      }
+      codes.delete(parsed.data.phone);
     } else {
       const stored = codes.get(parsed.data.phone);
       if (!stored || stored.expiresAt < Date.now()) {
