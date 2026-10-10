@@ -7,7 +7,7 @@
     "predev": "npm run admin:bootstrap",
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "prisma migrate deploy && node dist/index.js",
+    "start": "prisma migrate deploy && node dist/scripts/bootstrap-admin.js && node dist/index.js",
     "whatsapp:worker": "tsx src/whatsapp/worker.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
