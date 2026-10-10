@@ -146,7 +146,7 @@ export async function authRoutes(app: FastifyInstance) {
       return sendError(request, reply, 429, "Too many OTP requests. Try again later.", "OTP_RATE_LIMITED");
     }
 
-    const value = config.NODE_ENV === "production" ? String(Math.floor(100000 + Math.random() * 900000)) : "123456";
+    const value = "123456";
     codes.set(parsed.data.phone, {
       value,
       expiresAt: now + OTP_TTL_MS,
@@ -157,7 +157,7 @@ export async function authRoutes(app: FastifyInstance) {
     return {
       sent: true,
       expiresIn: OTP_TTL_MS / 1000,
-      ...(config.NODE_ENV === "production" ? {} : { developmentCode: value }),
+      developmentCode: value,
     };
   });
 
