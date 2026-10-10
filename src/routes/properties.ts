@@ -252,8 +252,11 @@ export async function propertyRoutes(app: FastifyInstance) {
 
     // Attempt to delete the file from disk (best-effort)
     if (imageUrl.startsWith("/uploads/")) {
-      const filePath = path.join(process.cwd(), imageUrl);
-      await unlink(filePath).catch(() => { /* ignore if already gone */ });
+      const uploadsRoot = path.resolve(process.cwd(), "uploads");
+      const filePath = path.resolve(process.cwd(), imageUrl.replace(/^\//, ""));
+      if (filePath.startsWith(uploadsRoot + path.sep) || filePath === uploadsRoot) {
+        await unlink(filePath).catch(() => { /* ignore if already gone */ });
+      }
     }
 
     const updated = await prisma.property.update({

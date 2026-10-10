@@ -53,7 +53,7 @@ export async function enqueueWhatsApp({
       providerMessageId: null,
       error: null,
       phone: normalized,
-      content: message ?? resolveTemplateBody(templateName ?? "buyer_inquiry_ack", locale, variables),
+      content: message ?? resolveTemplateBody(templateName ?? eventName, locale, variables),
       eventName,
     },
   }).catch(() => undefined);

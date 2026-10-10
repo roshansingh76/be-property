@@ -64,7 +64,7 @@ export async function workflowRoutes(app: FastifyInstance) {
       }
       const typeValue = documentTypeValue;
       const type = Object.values(DocumentType).includes(typeValue as DocumentType) ? typeValue as DocumentType : DocumentType.OTHER;
-      const filename = `${Date.now()}-${part.filename.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+      const filename = `${Date.now()}-${part.filename.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 120)}`;
       await pipeline(part.file, createWriteStream(path.join(uploadDir, filename)));
       const document = await prisma.propertyDocument.create({ data: { propertyId: property.id, type, url: `/uploads/properties/${property.id}/documents/${filename}`, filename, mimeType: part.mimetype } });
       created.push({ id: document.id, url: document.url, type: document.type });

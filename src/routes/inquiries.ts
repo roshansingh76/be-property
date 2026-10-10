@@ -49,6 +49,24 @@ export async function inquiryRoutes(app: FastifyInstance) {
       metadata: { inquiryId: inquiry.id },
     });
 
+    // Notify admin/broker about the new buyer inquiry
+    const adminPhone = process.env["ADMIN_PHONE"];
+    if (adminPhone) {
+      const preferredArea = parsed.data.preferredVillages.join(", ");
+      enqueueWhatsApp({
+        phone: adminPhone,
+        eventName: "new_property_inquiry_broker",
+        variables: {
+          broker_name: "Admin",
+          buyer_name: parsed.data.buyerName,
+          purpose: parsed.data.purpose,
+          preferred_area: preferredArea,
+        },
+        dedupeKey: `inquiry-broker:${inquiry.id}`,
+        metadata: { inquiryId: inquiry.id },
+      }).catch(() => undefined);
+    }
+
     return reply.code(201).send({
       id: inquiry.id,
       status: inquiry.status,
