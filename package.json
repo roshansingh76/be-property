@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "npm run admin:bootstrap",
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "prisma migrate deploy && node dist/index.js",
