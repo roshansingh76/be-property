@@ -1,0 +1,10 @@
+{
+  "verdict": "CHANGES_REQUESTED",
+  "summary": "Authorization bug in document upload/fetch routes: ownerRoles includes SELLER/BROKER so any authenticated seller can upload to or fetch documents for properties they don't own; fix by splitting adminRoles bypass from owner check.",
+  "findings": [
+    "Document upload authorization too wide: ownerRoles includes SELLER and BROKER, so the && condition lets any broker/seller bypass the ownership check and upload documents to properties they don't own. Fix: use adminRoles for the bypass path and a separate isOwner check for everyone else. Applies to both POST /properties/:id/documents and GET /properties/:id/documents in workflows.ts.",
+    "GET /properties/:id/documents has the same over-broad ownerRoles guard — a seller can fetch another seller's documents.",
+    "Dead import in property-documents-panel.tsx: API_ORIGIN is imported from @/lib/api/client but never used in the component. Remove it."
+  ],
+  "reviewDoc": "/var/www/html/be-property/.agents/tasks/task-broker-uploads-whatsapp/2026-10-10-212216-review.md"
+}

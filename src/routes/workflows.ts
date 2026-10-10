@@ -10,6 +10,8 @@ import { enqueueWhatsApp } from "../whatsapp/service.js";
 
 const adminRoles: string[] = [UserRole.ADMIN, UserRole.SUPER_ADMIN];
 const ownerRoles: string[] = [UserRole.SELLER, UserRole.BROKER, UserRole.AGENT, UserRole.ADMIN, UserRole.SUPER_ADMIN];
+// Roles that may act on a property document regardless of ownership (admins only)
+const documentAdminRoles: string[] = [UserRole.ADMIN, UserRole.SUPER_ADMIN];
 
 export async function workflowRoutes(app: FastifyInstance) {
   app.post<{ Params: { id: string } }>("/properties/:id/save", { preHandler: app.authenticate }, async (request, reply) => {
@@ -50,8 +52,8 @@ export async function workflowRoutes(app: FastifyInstance) {
   app.post<{ Params: { id: string } }>("/properties/:id/documents", { preHandler: app.authenticate }, async (request, reply) => {
     const property = await prisma.property.findUnique({ where: { id: request.params.id } });
     if (!property) return reply.code(404).send({ error: "Property not found" });
-    // Fixed: was `||` (blocked everyone); now `&&` so admins bypass ownership check
-    if (!ownerRoles.includes(request.authUser.role) && property.ownerId !== request.authUser.userId) return reply.code(403).send({ error: "Property owner access required" });
+    // Fixed: admins bypass ownership check; all other roles (including BROKER/SELLER) must own the property
+    if (!documentAdminRoles.includes(request.authUser.role) && property.ownerId !== request.authUser.userId) return reply.code(403).send({ error: "Property owner access required" });
     const uploadDir = path.join(process.cwd(), "uploads", "properties", property.id, "documents");
     await mkdir(uploadDir, { recursive: true });
     const created: { id: string; url: string; type: string }[] = [];
@@ -123,7 +125,7 @@ export async function workflowRoutes(app: FastifyInstance) {
   app.get<{ Params: { id: string } }>("/properties/:id/documents", { preHandler: app.authenticate }, async (request, reply) => {
     const property = await prisma.property.findUnique({ where: { id: request.params.id } });
     if (!property) return reply.code(404).send({ error: "Property not found" });
-    if (!ownerRoles.includes(request.authUser.role) && property.ownerId !== request.authUser.userId) return reply.code(403).send({ error: "Property owner access required" });
+    if (!documentAdminRoles.includes(request.authUser.role) && property.ownerId !== request.authUser.userId) return reply.code(403).send({ error: "Property owner access required" });
     const documents = await prisma.propertyDocument.findMany({
       where: { propertyId: property.id },
       orderBy: { createdAt: "desc" },
